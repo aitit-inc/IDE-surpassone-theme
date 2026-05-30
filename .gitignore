@@ -1,0 +1,6 @@
+# macOS
+.DS_Store
+
+# IDE 別テーマは独立した git リポジトリ。このアンブレラリポジトリでは追跡しない。
+vscode-surpassone-theme/
+zed-surpassone-theme/
