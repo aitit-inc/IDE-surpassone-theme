@@ -36,7 +36,7 @@ IDE-surpassone-theme/            ← このリポジトリ (aitit-inc/IDE-surpas
 そのため、トップレベルで `git add .` してサブディレクトリを取り込んだり、submodule 化したりしてはいけない。
 各 IDE 向けの編集・コミット・タグ付け・リリースは **対応するサブディレクトリ内の git リポジトリで** 行う。
 
-## Shared Design (canonical は各サブリポ)
+## Shared Design — 設計仕様 (canonical)
 
 全 IDE 共通のコンセプト:
 
@@ -44,9 +44,39 @@ IDE-surpassone-theme/            ← このリポジトリ (aitit-inc/IDE-surpas
 - **フラット**: ボーダーや影を極力排除し、背景色の差だけで領域を区別する
 - **視認性**: 色数を減らす代わりに、トーンの段階で読みやすさを担保する
 
-設計仕様(トーン階層・スコープ割り当て・フォントスタイル規則)の **正本(canonical)は
-[`vscode-surpassone-theme/CLAUDE.md`](vscode-surpassone-theme/CLAUDE.md)**。
-他 IDE への移植は VS Code 版の定義を基準に色を対応付ける。
+### Syntax Tonal Hierarchy
+
+| 層 | Dark | Light | 対象 |
+|---|---|---|---|
+| コーラル (bold) | `#DC7C68` | `#C05248` | 関数定義, タグ, this, エスケープ, 見出し |
+| コーラル (型) | `#D0806E` | `#9A5548` | 型, クラス, インターフェース, enum |
+| コーラル (キーワード) | `#B88A80` | `#8A6358` | キーワード, デコレータ, CSS属性, JSON/YAMLキー |
+| 明グレー | `#DEE0E5` | `#333333` | 変数, 関数呼出, プロパティ |
+| 中グレー | `#B8B9BE` | `#4C4C4C` | 文字列, 数値, 定数, 属性 |
+| 淡グレー (italic) | `#64656A` | `#A7A19E` | コメント |
+| 句読点 | `#969AA0` | `#706A68` | 演算子, 括弧 |
+
+### Font Style Rules
+
+- **bold** → コーラル最濃トーン (`#DC7C68` 系: 関数定義・タグ・this・エスケープ・見出し) のみ
+- **italic** → コメントのみ
+- **underline** → 使わない
+
+この表が全 IDE の正本。各 IDE への移植はこの定義を基準に色を対応付ける。
+IDE ごとのスコープ差異(VS Code TextMate ⇄ Zed tree-sitter 等)は [`rules/release.md`](rules/release.md) のマッピングを参照。
+
+## Development — ローカルプレビュー
+
+テーマ JSON は保存即反映でプレビューできる(ビルドステップなし)。
+
+- **VS Code / Cursor**: `publisher.name-version` 形式のシンボリックリンクで認識させる。
+  ```bash
+  cd vscode-surpassone-theme
+  VERSION=$(node -p "require('./package.json').version")
+  ln -s "$(pwd)" ~/.cursor/extensions/surpassone.surpassone-theme-$VERSION   # 初回のみ
+  ```
+  リンクがある間は JSON 保存で即反映。任意トークンのスコープは `Developer: Inspect Editor Tokens and Scopes` で確認できる。
+- **Zed**: コマンドパレットで `zed: install dev extension` → `zed-surpassone-theme/` を指定。`themes/surpassone.json` 保存で再読込。tree-sitter キャプチャの確認は `zed --foreground` のログ等。
 
 ## Version Sync
 
@@ -56,12 +86,12 @@ IDE-surpassone-theme/            ← このリポジトリ (aitit-inc/IDE-surpas
 - Zed: `zed-surpassone-theme/extension.toml` の `version`
 
 片方だけ上げない。リリースは全チャンネルで同じバージョン番号に合わせる
-(VS Code 側のリリース手順は `vscode-surpassone-theme/rules/release.md` を参照)。
+(完全なリリース手順は [`rules/release.md`](rules/release.md) を参照)。
 
 ## Working in this repo
 
-- アンブレラ側で扱うのは **このファイルと横断ドキュメントのみ**。テーマの中身は各サブディレクトリで編集する。
-- 特定 IDE のテーマを直すときは、まず対応するサブディレクトリに入り、そのリポジトリの `CLAUDE.md` / 規約に従う。
+- アンブレラ側で扱うのは **このファイルと横断ドキュメント(`rules/` 等)のみ**。テーマの中身・設定・配信ファイルは各サブディレクトリ側で編集する(サブディレクトリには独自の dev ドキュメントは置かず、設計・運用の正本はこのリポジトリに集約する)。
+- 特定 IDE のテーマを直すときは、対応するサブディレクトリに入り、上の設計仕様と [`rules/release.md`](rules/release.md) に従う。
 - 新しい IDE 向けポートを追加するときは、**新しい独立リポジトリ**として作り、このディレクトリ配下にクローンしたうえで、上の表と `.gitignore` にエントリを追加する。
 
 ## Organization
@@ -69,3 +99,6 @@ IDE-surpassone-theme/            ← このリポジトリ (aitit-inc/IDE-surpas
 - 会社名: SurpassOne
 - GitHub org: `aitit-inc`
 - VS Code Marketplace publisher ID: `surpassone`
+
+## 作業方針
+**探索は広く、出力は狭く**: 調査・ブレスト・思考のときは視点を広く取って多角的に検討する。一方、ドキュメント・設計・コードとして出力するときは、結論を伝えるのに必要な最小限まで削る。「念のため」「ついでに書いておく」式の埋め草は読まれず、重要な部分を埋もれさせ、長期的には記述の不整合を生む — コストだけでメリットはない。
